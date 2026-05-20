@@ -1,4 +1,4 @@
-package cl.duocuc.ms_inventory;
+package cl.duoc.ms_inventory;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
