@@ -41,7 +41,7 @@ public class InventoryServiceImpl implements InventoryService {
             dto.setUserId(entity.getUserId());
             dto.setItemId(entity.getItemId());
             dto.setQuantity(entity.getQuantity());
-            dto.setEmail(user.getEmail());
+            dto.setUsername(user.getUsername());
 
             try {
                 ItemDto item = itemClient.getItemById(entity.getItemId());
@@ -112,7 +112,7 @@ public class InventoryServiceImpl implements InventoryService {
         response.setItemId(savedItem.getItemId());
         response.setQuantity(savedItem.getQuantity());
 
-        response.setEmail(user.getEmail());
+        response.setUsername(user.getUsername());
         response.setItemName(verifiedItem.getName());
         response.setItemType(realItemType);
 
