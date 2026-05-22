@@ -65,32 +65,41 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         UserDto user;
-        try {
-            user = userClient.getUserById(dto.getUserId());
-        } catch (feign.FeignException e) {
-            throw new RuntimeException("Usuario no encontrado " + dto.getUserId());
-        }
-
         ItemDto verifiedItem;
         try {
+            user = userClient.getUserById(dto.getUserId());
             verifiedItem = itemClient.getItemById(dto.getItemId());
         } catch (feign.FeignException e) {
-            throw new RuntimeException("Item con ID " + dto.getItemId() + " no encontrado");
+            throw new RuntimeException("Usuario o Item no encontrado.");
         }
 
         String realItemType = verifiedItem.getItemType();
-
-
-        int currentAmount = repository.countByUserIdAndItemType(dto.getUserId(), realItemType);
-        int projectedAmount = currentAmount + dto.getQuantity();
-
-        if ("GEAR".equals(realItemType) && projectedAmount > 500) {
-            throw new RuntimeException("Inventario de equipamiento lleno");
-        } else if ("CONSUMABLE".equals(realItemType) && projectedAmount > 20) {
-            throw new RuntimeException("Inventario de consumibles lleno");
-        }
-
         Inventory existingItem = repository.findByUserIdAndItemId(dto.getUserId(), dto.getItemId()).orElse(null);
+
+        if ("COSMETIC".equals(realItemType)) {
+            if (dto.getQuantity() > 1) {
+                throw new RuntimeException("Solo se puede tener 1 de este item");
+            }
+            if (existingItem != null) {
+                throw new RuntimeException("Ya posees este cosmético");
+            }
+        }
+        else if ("CONSUMABLE".equals(realItemType)) {
+            int currentAmount = repository.countByUserIdAndItemType(dto.getUserId(), realItemType);
+            if (currentAmount + dto.getQuantity() > 20) {
+                throw new RuntimeException("Inventario de consumibles lleno.");
+            }
+        }
+        else {
+            List<String> gearTypes = List.of("WEAPON", "ARMOR");
+
+            if (gearTypes.contains(realItemType)) {
+                int currentGear = repository.countByUserIdAndItemTypeIn(dto.getUserId(), gearTypes);
+                if (currentGear + dto.getQuantity() > 500) {
+                    throw new RuntimeException("Inventario de equipamiento lleno.");
+                }
+            }
+        }
 
         Inventory savedItem;
         if (existingItem != null) {
@@ -104,14 +113,12 @@ public class InventoryServiceImpl implements InventoryService {
             newItem.setQuantity(dto.getQuantity());
             savedItem = repository.save(newItem);
         }
-
+    
         InventoryResponseDto response = new InventoryResponseDto();
-
         response.setId(savedItem.getId());
         response.setUserId(savedItem.getUserId());
         response.setItemId(savedItem.getItemId());
         response.setQuantity(savedItem.getQuantity());
-
         response.setUsername(user.getUsername());
         response.setItemName(verifiedItem.getName());
         response.setItemType(realItemType);
