@@ -15,7 +15,7 @@ public class InventoryResponseDto {
     @NotNull
     private Long userId;
     @NotBlank
-    private String email;
+    private String username;
     @NotNull
     private Long itemId;
     @NotBlank
