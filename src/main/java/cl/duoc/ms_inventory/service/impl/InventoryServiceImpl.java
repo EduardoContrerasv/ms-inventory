@@ -7,11 +7,12 @@ import cl.duoc.ms_inventory.model.Inventory;
 import cl.duoc.ms_inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import cl.duoc.ms_inventory.service.InventoryService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
@@ -22,7 +23,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public List<InventoryResponseDto> getInventoryByUserId(Long userId) {
-
+        log.debug("getInventoryByUserId()");
         UserDto user;
         try {
             user = userClient.getUserById(userId);
@@ -59,6 +60,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public InventoryResponseDto addItem(InventoryRequestDto dto) {
+        log.debug("addItem()");
 
         if (dto.getQuantity() <= 0) {
             throw new IllegalArgumentException("Cantidad debe ser mayor a 0");
@@ -129,6 +131,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public String consumeItem(ConsumeRequestDto dto) {
+        log.debug("consumeItem()");
 
         if (dto.getQuantity() <= 0) {
             throw new IllegalArgumentException("Debe ser mayor a 0");
@@ -166,6 +169,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public SimpleInventoryResponseDto getSpecificItem(Long userId, Long itemId) {
+        log.debug("getSpecificItem()");
 
         if (userId == null) {
             throw new RuntimeException("Usuario no encontrado");
@@ -197,6 +201,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public boolean checkHasItem(Long userId, Long itemId) {
+        log.debug("checkHasItem()");
         return repository.findByUserIdAndItemId(userId, itemId).isPresent();
     }
 
