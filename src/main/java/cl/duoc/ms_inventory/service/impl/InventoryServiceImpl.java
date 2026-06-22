@@ -7,11 +7,14 @@ import cl.duoc.ms_inventory.model.Inventory;
 import cl.duoc.ms_inventory.repository.InventoryRepository;
 import lombok.RequiredArgsConstructor;
 import cl.duoc.ms_inventory.service.InventoryService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.ArrayList;
 import java.util.List;
-
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InventoryServiceImpl implements InventoryService {
@@ -22,12 +25,12 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public List<InventoryResponseDto> getInventoryByUserId(Long userId) {
-
+        log.debug("getInventoryByUserId()");
         UserDto user;
         try {
             user = userClient.getUserById(userId);
         } catch (feign.FeignException e) {
-            throw new RuntimeException("Usuario no encontrado con ID: " + userId);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario no encontrado con ID: " + userId);
         }
 
         List<Inventory> rawInventory = repository.findByUserId(userId);
@@ -59,6 +62,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public InventoryResponseDto addItem(InventoryRequestDto dto) {
+        log.debug("addItem()");
 
         if (dto.getQuantity() <= 0) {
             throw new IllegalArgumentException("Cantidad debe ser mayor a 0");
@@ -70,7 +74,7 @@ public class InventoryServiceImpl implements InventoryService {
             user = userClient.getUserById(dto.getUserId());
             verifiedItem = itemClient.getItemById(dto.getItemId());
         } catch (feign.FeignException e) {
-            throw new RuntimeException("Usuario o Item no encontrado.");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Usuario o Item no encontrado.");
         }
 
         String realItemType = verifiedItem.getItemType();
@@ -129,6 +133,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public String consumeItem(ConsumeRequestDto dto) {
+        log.debug("consumeItem()");
 
         if (dto.getQuantity() <= 0) {
             throw new IllegalArgumentException("Debe ser mayor a 0");
@@ -138,12 +143,12 @@ public class InventoryServiceImpl implements InventoryService {
         try {
             verifiedItem = itemClient.getItemById(dto.getItemId());
         } catch (feign.FeignException e) {
-            throw new RuntimeException("Item no encontrado en la base de datos: " + dto.getItemId());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item no encontrado en la base de datos: " + dto.getItemId());
         }
         String itemName = verifiedItem.getName();
 
         Inventory existingItem = repository.findByUserIdAndItemId(dto.getUserId(), dto.getItemId())
-                .orElseThrow(() -> new RuntimeException("Item no encontrado en el inventario"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item no encontrado en el inventario"));
 
         if (existingItem.getQuantity() < dto.getQuantity()) {
             throw new RuntimeException(
@@ -166,6 +171,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public SimpleInventoryResponseDto getSpecificItem(Long userId, Long itemId) {
+        log.debug("getSpecificItem()");
 
         if (userId == null) {
             throw new RuntimeException("Usuario no encontrado");
@@ -174,13 +180,13 @@ public class InventoryServiceImpl implements InventoryService {
         }
 
         Inventory existingItem = repository.findByUserIdAndItemId(userId, itemId)
-                .orElseThrow(() -> new RuntimeException("Item no encontrado en el inventario"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Item no encontrado en el inventario"));
 
         ItemDto item;
         try {
             item = itemClient.getItemById(itemId);
         } catch (feign.FeignException e) {
-            throw new RuntimeException("Item no encontrado en la base de datos de items");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Item no encontrado en la base de datos de items");
         }
 
         SimpleInventoryResponseDto response = new SimpleInventoryResponseDto();
@@ -197,6 +203,7 @@ public class InventoryServiceImpl implements InventoryService {
 
     @Override
     public boolean checkHasItem(Long userId, Long itemId) {
+        log.debug("checkHasItem()");
         return repository.findByUserIdAndItemId(userId, itemId).isPresent();
     }
 
